@@ -20,49 +20,24 @@ public class VertexGroups : MonoBehaviour
         groups.Add(new KeyValuePair<string, int[]>(groupName, indices.ToArray()));
     }
 
-    public void UpdateVertexGroup(string groupName, int[] indices)
+    public void ReplaceVertexGroup(int groupIndex, KeyValuePair<string, int[]> group)
     {
-        int index = -1;
-        for (int i = 0; i < groups.Count; i++)
+        if (groupIndex < 0 || groupIndex >= groups.Count)
         {
-            if (groups[i].Key == groupName)
-            {
-                index = i;
-                break;
-            }
-        }
-        if (index == -1)
-        {
-            Debug.LogError("Group name not found.");
+            Debug.LogError("Group index out of range.");
             return;
         }
-        groups.RemoveAt(index);
-        groups.Add(new KeyValuePair<string, int[]>(groupName, indices));
+        groups[groupIndex] = group;
     }
 
-    public void UpdateVertexGroup(string groupName, List<int> indices)
+    public void RemoveVertexGroup(int groupIndex)
     {
-        UpdateVertexGroup(groupName, indices.ToArray());
-    }
-
-    public void RemoveVertexGroup(string groupName)
-    {
-        int index = -1;
-        for (int i = 0; i < groups.Count; i++)
+        if (groupIndex < 0 || groupIndex >= groups.Count)
         {
-            if (groups[i].Key == groupName)
-            {
-                index = i;
-                break;
-            }
-        }
-        if (index == -1)
-        {
-            Debug.LogError("Group name not found.");
+            Debug.LogError("Group index out of range.");
             return;
         }
-
-        groups.RemoveAt(index);
+        groups.RemoveAt(groupIndex);
     }
 
     public void ClearVertexGroups()
@@ -75,7 +50,7 @@ public class VertexGroups : MonoBehaviour
         return groups.Count;
     }
 
-    public bool HasGroup(string groupName)
+    public int GetGroupIndex(string groupName)
     {
         int index = -1;
         for (int i = 0; i < groups.Count; i++)
@@ -86,26 +61,7 @@ public class VertexGroups : MonoBehaviour
                 break;
             }
         }
-        return index != -1;
-    }
-
-    public int[] GetVertexGroup(string groupName)
-    {
-        int index = -1;
-        for (int i = 0; i < groups.Count; i++)
-        {
-            if (groups[i].Key == groupName)
-            {
-                index = i;
-                break;
-            }
-        }
-        if (index == -1)
-        {
-            Debug.LogError("Group name not found.");
-            return null;
-        }
-        return groups[index].Value;
+        return index;
     }
 
     public KeyValuePair<string, int[]> GetVertexGroup(int groupIndex)

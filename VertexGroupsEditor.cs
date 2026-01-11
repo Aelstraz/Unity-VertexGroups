@@ -12,12 +12,13 @@ public class VertexGroupsEditor : Editor
 {
     private static float handleSize = 0.02f;
     private List<int> currentGroupIndices = new List<int>();
-    private string currentGroupKey = null;
+    private int currentGroupIndex = -1;
     private bool isEditing = false;
     private Tool previousTool = Tool.None;
     private Vector2 startMousePosition;
     private Rect mouseDragRect = new Rect();
     private bool isDragging = false;
+    private string currentGroupName = null;
     private string newGroupName = "";
 
     public override void OnInspectorGUI()
@@ -42,8 +43,10 @@ public class VertexGroupsEditor : Editor
             {
                 isEditing = false;
                 Tools.current = previousTool;
-                currentGroupKey = null;
+                currentGroupIndex = -1;
                 currentGroupIndices.Clear();
+                currentGroupName = null;
+                newGroupName = "";
             }
 
             handleSize = EditorGUILayout.Slider("Handle Size", handleSize, 0.001f, 0.1f);
@@ -54,7 +57,7 @@ public class VertexGroupsEditor : Editor
                 int index = 0;
 
                 // Ensure unique group name
-                while (vertexGroup.HasGroup(newName + index))
+                while (vertexGroup.GetGroupIndex(newName + index) != -1)
                 {
                     index++;
                 }
@@ -74,35 +77,34 @@ public class VertexGroupsEditor : Editor
         }
 
         // Edit current group
-        if (isEditing && vertexGroup.GetGroupCount() > 0 && currentGroupKey != null)
+        if (isEditing && vertexGroup.GetGroupCount() > 0 && currentGroupIndex != -1)
         {
             GUILayout.Label("Group Name: ");
             newGroupName = GUILayout.TextField(newGroupName);
 
             if (GUILayout.Button("Save Current Group"))
             {
-                if (newGroupName == currentGroupKey)
+                if (newGroupName == currentGroupName)
                 {
-                    vertexGroup.UpdateVertexGroup(currentGroupKey, currentGroupIndices);
+                    vertexGroup.ReplaceVertexGroup(currentGroupIndex, new KeyValuePair<string, int[]>(newGroupName, currentGroupIndices.ToArray()));
                 }
                 else
                 {
-                    if (vertexGroup.HasGroup(newGroupName))
+                    if (vertexGroup.GetGroupIndex(newGroupName) != -1)
                     {
                         Debug.LogError("A group with that name already exists.");
                     }
                     else
                     {
-                        vertexGroup.RemoveVertexGroup(currentGroupKey);
-                        vertexGroup.AddVertexGroup(newGroupName, currentGroupIndices);
-                        currentGroupKey = newGroupName;
+                        vertexGroup.ReplaceVertexGroup(currentGroupIndex, new KeyValuePair<string, int[]>(newGroupName, currentGroupIndices.ToArray()));
+                        currentGroupName = newGroupName;
                     }
                 }
                 EditorUtility.SetDirty(target);
             }
             if (GUILayout.Button("Delete Current Group"))
             {
-                vertexGroup.RemoveVertexGroup(currentGroupKey);
+                vertexGroup.RemoveVertexGroup(currentGroupIndex);
                 SelectVertexGroup(vertexGroup, 0);
                 EditorUtility.SetDirty(target);
             }
@@ -124,7 +126,7 @@ public class VertexGroupsEditor : Editor
 
         if (!isEditing)
         {
-            if (currentGroupKey == group.Key)
+            if (currentGroupIndex == i)
             {
                 GUILayout.Label(buttonLabel, selectedButtonStyle);
             }
@@ -135,7 +137,7 @@ public class VertexGroupsEditor : Editor
         }
         else if (isEditing)
         {
-            if (currentGroupKey == group.Key)
+            if (currentGroupIndex == i)
             {
                 if (GUILayout.Button(buttonLabel, selectedButtonStyle))
                 {
@@ -157,13 +159,14 @@ public class VertexGroupsEditor : Editor
         currentGroupIndices.Clear();
         if (groupIndex < 0 || vertexGroups.GetGroupCount() <= 0 || groupIndex >= vertexGroups.GetGroupCount())
         {
-            currentGroupKey = null;
+            currentGroupIndex = -1;
             return;
         }
         KeyValuePair<string, int[]> group = vertexGroups.GetVertexGroup(groupIndex);
         currentGroupIndices = group.Value.ToList();
-        currentGroupKey = group.Key;
-        newGroupName = currentGroupKey;
+        currentGroupIndex = groupIndex;
+        newGroupName = group.Key;
+        currentGroupName = group.Key;
     }
 
     public void OnSceneGUI()
@@ -180,7 +183,7 @@ public class VertexGroupsEditor : Editor
             return;
         }
 
-        if (isEditing && currentGroupKey != null)
+        if (isEditing && currentGroupIndex != -1)
         {
             // Prevent de-selection of game object while in edit mode
             HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
@@ -263,7 +266,7 @@ public class VertexGroupsEditor : Editor
     private void DrawVertexHandle(Vector3 position, int index, bool finishedDragging, bool hasClicked)
     {
         Handles.color = Color.red;
-        if (currentGroupKey != null && currentGroupIndices.Contains(index))
+        if (currentGroupIndex != -1 && currentGroupIndices.Contains(index))
         {
             Handles.color = Color.green;
         }
