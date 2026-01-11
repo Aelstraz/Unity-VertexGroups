@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -8,26 +7,37 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter))]
 public class VertexGroups : MonoBehaviour
 {
-    public Dictionary<string, int[]> groups = new Dictionary<string, int[]>();
+    [SerializeField]
+    public List<KeyValuePair<string, int[]>> groups = new List<KeyValuePair<string, int[]>>();
 
     public void AddVertexGroup(string groupName, int[] indices)
     {
-        groups.Add(groupName, indices);
+        groups.Add(new KeyValuePair<string, int[]>(groupName, indices));
     }
 
     public void AddVertexGroup(string groupName, List<int> indices)
     {
-        groups.Add(groupName, indices.ToArray());
+        groups.Add(new KeyValuePair<string, int[]>(groupName, indices.ToArray()));
     }
 
     public void UpdateVertexGroup(string groupName, int[] indices)
     {
-        if (!groups.ContainsKey(groupName))
+        int index = -1;
+        for (int i = 0; i < groups.Count; i++)
+        {
+            if (groups[i].Key == groupName)
+            {
+                index = i;
+                break;
+            }
+        }
+        if (index == -1)
         {
             Debug.LogError("Group name not found.");
             return;
         }
-        groups[groupName] = indices;
+        groups.RemoveAt(index);
+        groups.Add(new KeyValuePair<string, int[]>(groupName, indices));
     }
 
     public void UpdateVertexGroup(string groupName, List<int> indices)
@@ -37,13 +47,22 @@ public class VertexGroups : MonoBehaviour
 
     public void RemoveVertexGroup(string groupName)
     {
-        if (!groups.ContainsKey(groupName))
+        int index = -1;
+        for (int i = 0; i < groups.Count; i++)
+        {
+            if (groups[i].Key == groupName)
+            {
+                index = i;
+                break;
+            }
+        }
+        if (index == -1)
         {
             Debug.LogError("Group name not found.");
             return;
         }
 
-        groups.Remove(groupName);
+        groups.RemoveAt(index);
     }
 
     public void ClearVertexGroups()
@@ -58,27 +77,59 @@ public class VertexGroups : MonoBehaviour
 
     public bool HasGroup(string groupName)
     {
-        return groups.ContainsKey(groupName);
+        int index = -1;
+        for (int i = 0; i < groups.Count; i++)
+        {
+            if (groups[i].Key == groupName)
+            {
+                index = i;
+                break;
+            }
+        }
+        return index != -1;
     }
 
     public int[] GetVertexGroup(string groupName)
     {
-        if (!groups.ContainsKey(groupName))
+        int index = -1;
+        for (int i = 0; i < groups.Count; i++)
+        {
+            if (groups[i].Key == groupName)
+            {
+                index = i;
+                break;
+            }
+        }
+        if (index == -1)
         {
             Debug.LogError("Group name not found.");
             return null;
         }
-        return groups[groupName];
+        return groups[index].Value;
     }
 
-    public (string, int[]) GetVertexGroup(int groupIndex)
+    public KeyValuePair<string, int[]> GetVertexGroup(int groupIndex)
     {
         if (groupIndex < 0 || groupIndex >= groups.Count)
         {
             Debug.LogError("Group index out of range.");
-            return (null, null);
+            return new KeyValuePair<string, int[]>(null, null);
         }
-        string groupName = groups.Keys.ElementAt(groupIndex);
-        return (groupName, groups[groupName]);
+        return groups[groupIndex];
+    }
+}
+
+[System.Serializable]
+public class KeyValuePair<TKey, TValue>
+{
+    [SerializeField]
+    public TKey Key;
+    [SerializeField]
+    public TValue Value;
+
+    public KeyValuePair(TKey key, TValue value)
+    {
+        Key = key;
+        Value = value;
     }
 }

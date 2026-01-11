@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Custom editor for VertexGroup component to allow editing vertex groups in the Unity Editor.
@@ -21,8 +22,6 @@ public class VertexGroupsEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        DrawDefaultInspector();
-
         VertexGroups vertexGroup = (VertexGroups)target;
 
         // Edit mode toggle
@@ -62,6 +61,7 @@ public class VertexGroupsEditor : Editor
 
                 vertexGroup.AddVertexGroup(newName + index, new int[] { });
                 SelectVertexGroup(vertexGroup, vertexGroup.GetGroupCount() - 1);
+                EditorUtility.SetDirty(target);
             }
         }
 
@@ -98,11 +98,13 @@ public class VertexGroupsEditor : Editor
                         currentGroupKey = newGroupName;
                     }
                 }
+                EditorUtility.SetDirty(target);
             }
             if (GUILayout.Button("Delete Current Group"))
             {
                 vertexGroup.RemoveVertexGroup(currentGroupKey);
                 SelectVertexGroup(vertexGroup, 0);
+                EditorUtility.SetDirty(target);
             }
         }
 
@@ -112,8 +114,8 @@ public class VertexGroupsEditor : Editor
 
     private void DrawVertexGroup(VertexGroups vertexGroups, int i)
     {
-        (string, int[]) group = vertexGroups.GetVertexGroup(i);
-        string buttonLabel = group.Item1 + " (" + group.Item2.Length + " vertices)";
+        KeyValuePair<string, int[]> group = vertexGroups.GetVertexGroup(i);
+        string buttonLabel = group.Key + " (" + group.Value.Length + " vertices)";
 
         GUIStyle selectedButtonStyle = new GUIStyle(GUI.skin.button);
         selectedButtonStyle.normal.textColor = Color.green;
@@ -122,7 +124,7 @@ public class VertexGroupsEditor : Editor
 
         if (!isEditing)
         {
-            if (currentGroupKey == group.Item1)
+            if (currentGroupKey == group.Key)
             {
                 GUILayout.Label(buttonLabel, selectedButtonStyle);
             }
@@ -133,7 +135,7 @@ public class VertexGroupsEditor : Editor
         }
         else if (isEditing)
         {
-            if (currentGroupKey == group.Item1)
+            if (currentGroupKey == group.Key)
             {
                 if (GUILayout.Button(buttonLabel, selectedButtonStyle))
                 {
@@ -158,9 +160,9 @@ public class VertexGroupsEditor : Editor
             currentGroupKey = null;
             return;
         }
-        (string, int[]) group = vertexGroups.GetVertexGroup(groupIndex);
-        currentGroupIndices = group.Item2.ToList();
-        currentGroupKey = group.Item1;
+        KeyValuePair<string, int[]> group = vertexGroups.GetVertexGroup(groupIndex);
+        currentGroupIndices = group.Value.ToList();
+        currentGroupKey = group.Key;
         newGroupName = currentGroupKey;
     }
 
